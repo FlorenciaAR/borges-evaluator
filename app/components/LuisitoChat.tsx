@@ -39,7 +39,7 @@ export default function LuisitoChat() {
     setShowOptions(false);
     
     // 1. Agregar la respuesta del usuario al chat
-    const nuevoHistorial = [...historial, { sender: 'user', text: optionText }];
+    const nuevoHistorial: Mensaje[] = [...historial, { sender: 'user', text: optionText }];
     const nuevasRespuestas = [...respuestasUsuario, optionIndex];
     setRespuestasUsuario(nuevasRespuestas);
     setHistorial(nuevoHistorial);
@@ -62,4 +62,79 @@ export default function LuisitoChat() {
         
         setIsFinished(true);
         const resultadoFinal = aciertos === 3 
-          ?
+          ? "¡CALIFICADO! Dios ha detenido el tiempo para ti. Tienes un año secreto para terminar tu obra."
+          : "NO CALIFICADO. El universo ha seguido su curso. La descarga de fusiles concluyó.";
+        
+        setHistorial(prev => [...prev, { sender: 'luisito', text: resultadoFinal }]);
+        
+        // Enviar a tu API asíncrona de Vercel/KV en segundo plano
+        fetch('/api/evaluacion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantId: 'merge-analitica', score: aciertos })
+        }).catch(err => console.error(err));
+
+      }, 800);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-2xl bg-[#0b171e] rounded-xl border border-slate-800 shadow-2xl overflow-hidden font-sans">
+      {/* Header del Bot */}
+      <div className="bg-[#0f242e] p-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center text-white font-serif font-bold text-lg">
+            L
+          </div>
+          <div>
+            <h3 className="text-white font-semibold text-sm">Luisito</h3>
+            <p className="text-xs text-cyan-400">Coordinador literario — MERGE</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-1.5">
+          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span className="text-xs text-slate-400">En línea ahora</span>
+        </div>
+      </div>
+
+      {/* Ventana de Conversación */}
+      <div className="p-4 h-[350px] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+        {historial.map((msg, index) => (
+          <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+              msg.sender === 'user' 
+                ? 'bg-cyan-500 text-white rounded-tr-none' 
+                : 'bg-[#162c39] text-slate-100 rounded-tl-none border border-slate-800/50'
+            }`}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Panel de Opciones (Botones de Respuesta inferiores estilo Anespro) */}
+      <div className="p-4 bg-[#091319] border-t border-slate-800 min-h-[140px] flex flex-col justify-center">
+        {showOptions && !isFinished && (
+          <div className="space-y-2 w-full">
+            <span className="text-[11px] uppercase tracking-wider text-slate-500 block mb-1 px-1">Selecciona una opción:</span>
+            {triviaBorges[currentStep].opciones.map((opcion, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSeleccion(idx, opcion)}
+                className="w-full text-left p-3 rounded-xl bg-[#12242f] hover:bg-[#1a3444] border border-slate-800 hover:border-cyan-500 text-slate-200 hover:text-white transition-all text-sm font-medium active:scale-[0.995]"
+              >
+                ✦ {opcion}
+              </button>
+            ))}
+          </div>
+        )}
+        {isFinished && (
+          <div className="text-center py-2 text-xs text-slate-500 font-mono">
+            — Evaluación finalizada con Luisito —
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

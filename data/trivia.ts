@@ -1,8 +1,7 @@
-// data/trivia.ts
 export interface Pregunta {
   id: number;
   enunciado: string;
-  opciones: string[];
+  opciones: string[]; // <-- En español estricto
   correcta: number; 
 }
 
