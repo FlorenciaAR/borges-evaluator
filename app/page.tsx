@@ -1,65 +1,107 @@
-import Image from "next/image";
+// app/page.tsx
+'use client';
+import { useState } from 'react';
+import TriviaBot from './components/TriviaBot';
 
 export default function Home() {
+  const [step, setStep] = useState<'registro' | 'trivia' | 'resultado'>('registro');
+  const [userData, setUserData] = useState({ nombre: '', email: '' });
+  const [resultado, setResultado] = useState({ score: 0, calificado: false });
+  const [loading, setLoading] = useState(false);
+
+  const handleRegistroSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userData.nombre && userData.email) {
+      setStep('trivia');
+    }
+  };
+
+  const finalizarEvaluacion = async (score: number, respuestasUsuario: number[]) => {
+    setLoading(true);
+    const esCalificado = score === 3; // Califica solo si responde las 3 bien
+    setResultado({ score, calificado: esCalificado });
+    setStep('resultado');
+
+    // Aquí es donde en el futuro golpearás a tu API de Vercel KV o GHL
+    try {
+      await fetch('/api/evaluacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: 'merge-analitica',
+          nombre: userData.nombre,
+          email: userData.email,
+          score: score,
+          respuestas: respuestasUsuario
+        }),
+      });
+    } catch (e) {
+      console.error("Error al guardar la evaluación:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <main className="min-h-screen bg-stone-50 flex flex-col justify-center items-center py-12 px-4 select-none">
+      <div className="text-center mb-8 max-w-md">
+        <h1 className="text-3xl font-serif text-stone-900 font-bold">El Milagro Secreto</h1>
+        <p className="text-stone-600 font-sans text-sm mt-2">
+          Demo de Calificación Automatizada para <span className="font-semibold text-blue-900">MERGE Analítica</span>
+        </p>
+      </div>
+
+      {step === 'registro' && (
+        <form onSubmit={handleRegistroSubmit} className="w-full max-w-md p-6 bg-white rounded-xl border border-stone-200 shadow-sm space-y-4 font-sans">
+          <h2 className="text-lg font-serif font-bold text-stone-800 mb-2">Ingresa tus datos para iniciar la prueba</h2>
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 uppercase mb-1">Nombre Completo</label>
+            <input 
+              type="text" 
+              required
+              className="w-full p-3 border border-stone-300 rounded-lg text-sm bg-stone-50 focus:outline-none focus:border-stone-500 text-stone-900"
+              value={userData.nombre}
+              onChange={(e) => setUserData({ ...userData, nombre: e.target.value })}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 uppercase mb-1">Correo Electrónico</label>
+            <input 
+              type="email" 
+              required
+              className="w-full p-3 border border-stone-300 rounded-lg text-sm bg-stone-50 focus:outline-none focus:border-stone-500 text-stone-900"
+              value={userData.email}
+              onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+            />
+          </div>
+          <button type="submit" className="w-full p-3 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-sm font-semibold transition-colors">
+            Comenzar Evaluación
+          </button>
+        </form>
+      )}
+
+      {step === 'trivia' && <TriviaBot onComplete={finalizarEvaluacion} />}
+
+      {step === 'resultado' && (
+        <div className="w-full max-w-md text-center p-8 bg-white rounded-xl border border-stone-200 shadow-md font-serif">
+          <h2 className="text-2xl font-bold text-stone-800">Sentencia Determinada</h2>
+          <p className="mt-2 text-stone-600 font-sans text-sm">Usuario: {userData.nombre} ({userData.email})</p>
+          <div className="my-6 p-4 bg-stone-50 border border-stone-200 rounded-lg">
+            <span className="text-sm font-sans text-stone-500 block">Puntaje obtenido</span>
+            <span className="text-4xl font-bold text-stone-900">{resultado.score} / 3</span>
+          </div>
+          
+          {resultado.calificado ? (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg text-sm font-sans font-medium">
+              ¡CALIFICADO! Dios ha detenido el tiempo. Tienes un año secreto en tu mente para concluir tu obra dramática.
+            </div>
+          ) : (
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-900 rounded-lg text-sm font-sans font-medium">
+              NO CALIFICADO. El universo ha seguido su curso regular. La descarga de los fusiles de la Gestapo ha concluido.
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
