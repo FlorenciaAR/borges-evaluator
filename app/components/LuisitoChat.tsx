@@ -19,12 +19,10 @@ export default function LuisitoChat() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al final del chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [historial]);
 
-  // Delay para simular que Luisito está "pensando" la primera pregunta
   useEffect(() => {
     if (currentStep === 0 && historial.length === 2) {
       const timer = setTimeout(() => {
@@ -38,40 +36,32 @@ export default function LuisitoChat() {
   const handleSeleccion = (optionIndex: number, optionText: string) => {
     setShowOptions(false);
     
-    // 1. Agregar respuesta al chat y al estado
     const nuevoHistorial: Mensaje[] = [...historial, { sender: 'user', text: optionText }];
     const nuevasRespuestas = [...respuestasUsuario, optionIndex];
     setRespuestasUsuario(nuevasRespuestas);
     setHistorial(nuevoHistorial);
 
-    // 2. Calcular los errores exactos hasta este momento
     const cantidadErrores = nuevasRespuestas.reduce((acc, resp, idx) => {
       return resp !== triviaBorges[idx].correcta ? acc + 1 : acc;
     }, 0);
 
     const siguientePreguntaIdx = currentStep + 1;
 
-    // 3. Lógica de Evaluación: El Condicional Fail Fast
     if (cantidadErrores >= 2) {
-      // Condición A: Cortar si ya tiene 2 respuestas incorrectas
       setTimeout(() => {
         setIsFinished(true);
-        const resultadoFinal = "NO CALIFICADO y seguir respondiendo no cambiará el destino. Has cometido demasiados errores. El universo ha seguido su curso y la descarga de fusiles concluyó.";
-        
+        const resultadoFinal = "NO CALIFICADO. Has cometido demasiados errores. El universo ha seguido su curso y la descarga de fusiles concluyó.";
         setHistorial(prev => [...prev, { sender: 'luisito', text: resultadoFinal }]);
         
-        // Calcular aciertos para enviar a la API
         const aciertos = nuevasRespuestas.length - cantidadErrores;
         fetch('/api/evaluacion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tenantId: 'merge-analitica', score: aciertos })
         }).catch(err => console.error(err));
-
       }, 800);
     } 
     else if (siguientePreguntaIdx < triviaBorges.length) {
-      // Condición B: Sigue vivo y hay más preguntas
       setTimeout(() => {
         setCurrentStep(siguientePreguntaIdx);
         setHistorial(prev => [...prev, { sender: 'luisito', text: triviaBorges[siguientePreguntaIdx].enunciado }]);
@@ -79,10 +69,7 @@ export default function LuisitoChat() {
       }, 800);
     } 
     else {
-      // Condición C: Terminó todas las preguntas sin ser eliminado (Ganó / Puntaje perfecto o 1 solo error permitido)
       setTimeout(() => {
-        setIsFinished(true);
-        // Volvemos a contar aciertos totales por seguridad
         const aciertos = nuevasRespuestas.reduce((acc, resp, idx) => {
           return resp === triviaBorges[idx].correcta ? acc + 1 : acc;
         }, 0);
@@ -98,38 +85,37 @@ export default function LuisitoChat() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tenantId: 'merge-analitica', score: aciertos })
         }).catch(err => console.error(err));
-
       }, 800);
     }
   };
 
   return (
-    <div className="w-full max-w-2xl bg-[#0b171e] rounded-xl border border-slate-800 shadow-2xl overflow-hidden font-sans">
+    <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden font-sans">
       {/* Header del Bot */}
-      <div className="bg-[#0f242e] p-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="bg-white p-4 border-b border-slate-100 flex items-center justify-between shadow-sm z-10 relative">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center text-white font-serif font-bold text-lg">
-            L
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-400 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner border border-white/20">
+            M
           </div>
           <div>
-            <h3 className="text-white font-semibold text-sm">Luisito</h3>
-            <p className="text-xs text-cyan-400">Coordinador literario — MERGE</p>
+            <h3 className="text-slate-800 font-bold text-sm tracking-wide">MERGE Bot</h3>
+            <p className="text-xs text-slate-500 font-medium">Asistente Evaluador</p>
           </div>
         </div>
-        <div className="flex items-center space-x-1.5">
+        <div className="flex items-center space-x-1.5 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-          <span className="text-xs text-slate-400">En línea ahora</span>
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">En línea</span>
         </div>
       </div>
 
       {/* Ventana de Conversación */}
-      <div className="p-4 h-[350px] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+      <div className="p-5 h-[380px] overflow-y-auto space-y-5 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-200">
         {historial.map((msg, index) => (
-          <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+          <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
+            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
               msg.sender === 'user' 
-                ? 'bg-cyan-500 text-white rounded-tr-none' 
-                : 'bg-[#162c39] text-slate-100 rounded-tl-none border border-slate-800/50'
+                ? 'bg-gradient-to-r from-blue-500 to-emerald-400 text-white rounded-tr-sm shadow-md font-medium' 
+                : 'bg-white text-slate-700 rounded-tl-sm border border-slate-200 shadow-sm'
             }`}>
               {msg.text}
             </div>
@@ -139,24 +125,29 @@ export default function LuisitoChat() {
       </div>
 
       {/* Panel de Opciones */}
-      <div className="p-4 bg-[#091319] border-t border-slate-800 min-h-[140px] flex flex-col justify-center">
+      <div className="p-5 bg-white border-t border-slate-100 min-h-[140px] flex flex-col justify-center rounded-b-2xl">
         {showOptions && !isFinished && (
-          <div className="space-y-2 w-full">
-            <span className="text-[11px] uppercase tracking-wider text-slate-500 block mb-1 px-1">Selecciona una opción:</span>
+          <div className="space-y-2.5 w-full">
+            <span className="text-[11px] uppercase tracking-widest font-bold text-slate-400 block mb-2 px-1">Selecciona tu respuesta:</span>
             {triviaBorges[currentStep].opciones.map((opcion, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSeleccion(idx, opcion)}
-                className="w-full text-left p-3 rounded-xl bg-[#12242f] hover:bg-[#1a3444] border border-slate-800 hover:border-cyan-500 text-slate-200 hover:text-white transition-all text-sm font-medium active:scale-[0.995]"
+                className="w-full text-left p-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-emerald-400 hover:shadow-sm text-slate-600 hover:text-emerald-700 transition-all text-sm font-semibold group flex items-center"
               >
-                ✦ {opcion}
+                <span className="w-5 h-5 rounded-full border-2 border-slate-200 group-hover:border-emerald-400 flex-shrink-0 mr-3 flex items-center justify-center">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                </span>
+                {opcion}
               </button>
             ))}
           </div>
         )}
         {isFinished && (
-          <div className="text-center py-2 text-xs text-slate-500 font-mono">
-            — Evaluación finalizada con Luisito —
+          <div className="text-center py-3">
+            <span className="inline-block px-4 py-1.5 bg-slate-100 rounded-full text-xs text-slate-500 font-semibold tracking-wide">
+              Evaluación Finalizada
+            </span>
           </div>
         )}
       </div>

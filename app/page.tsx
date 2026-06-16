@@ -2,20 +2,23 @@ import LuisitoChat from './components/LuisitoChat';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#050b0f] bg-gradient-to-b from-[#08131a] to-[#04080b] flex flex-col items-center justify-center py-12 px-4">
+    <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-12 px-4 font-sans">
       
-      {/* Hero Badge */}
-      <div className="mb-3 px-3 py-1 bg-cyan-950/50 border border-cyan-800/60 rounded-full text-[11px] font-mono tracking-widest text-cyan-400 uppercase">
-        Borges · El Milagro Secreto · Merge Analítica
+      {/* Hero Badge (Estilo MERGE) */}
+      <div className="mb-4 px-4 py-1.5 bg-white border border-slate-200 shadow-sm rounded-full text-[11px] font-semibold tracking-widest text-slate-500 uppercase flex items-center space-x-2">
+        <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-400"></span>
+        <span>Borges · El Milagro Secreto · Merge Analítica</span>
       </div>
 
       {/* Titulares Principales */}
-      <div className="text-center mb-8 max-w-2xl px-2">
-        <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight font-sans">
+      <div className="text-center mb-10 max-w-2xl px-2">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight leading-tight">
           ¿Puedes detener el tiempo?<br />
-          <span className="text-cyan-400">Estamos aquí para evaluarte.</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-400">
+            Estamos aquí para evaluarte.
+          </span>
         </h1>
-        <p className="text-slate-400 text-sm md:text-base mt-4 max-w-lg mx-auto font-sans">
+        <p className="text-slate-500 text-sm md:text-base mt-4 max-w-lg mx-auto font-medium">
           Ante el pelotón de fusilamiento de la Gestapo, Jaromir Hladík exigió un milagro. 
           Demuestra tu comprensión analítica e interactúa con nuestro sistema.
         </p>
