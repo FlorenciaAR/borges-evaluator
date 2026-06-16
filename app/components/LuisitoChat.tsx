@@ -19,12 +19,12 @@ export default function LuisitoChat() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al final del chat cada vez que cambia el historial
+  // Auto-scroll al final del chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [historial]);
 
-  // Delay para simular que Luisito está "pensando" la siguiente pregunta
+  // Delay para simular que Luisito está "pensando" la primera pregunta
   useEffect(() => {
     if (currentStep === 0 && historial.length === 2) {
       const timer = setTimeout(() => {
@@ -38,36 +38,61 @@ export default function LuisitoChat() {
   const handleSeleccion = (optionIndex: number, optionText: string) => {
     setShowOptions(false);
     
-    // 1. Agregar la respuesta del usuario al chat
+    // 1. Agregar respuesta al chat y al estado
     const nuevoHistorial: Mensaje[] = [...historial, { sender: 'user', text: optionText }];
     const nuevasRespuestas = [...respuestasUsuario, optionIndex];
     setRespuestasUsuario(nuevasRespuestas);
     setHistorial(nuevoHistorial);
 
+    // 2. Calcular los errores exactos hasta este momento
+    const cantidadErrores = nuevasRespuestas.reduce((acc, resp, idx) => {
+      return resp !== triviaBorges[idx].correcta ? acc + 1 : acc;
+    }, 0);
+
     const siguientePreguntaIdx = currentStep + 1;
 
-    // 2. Verificar si hay más preguntas o si terminamos
-    if (siguientePreguntaIdx < triviaBorges.length) {
+    // 3. Lógica de Evaluación: El Condicional Fail Fast
+    if (cantidadErrores >= 2) {
+      // Condición A: Cortar si ya tiene 2 respuestas incorrectas
+      setTimeout(() => {
+        setIsFinished(true);
+        const resultadoFinal = "NO CALIFICADO y seguir respondiendo no cambiará el destino. Has cometido demasiados errores. El universo ha seguido su curso y la descarga de fusiles concluyó.";
+        
+        setHistorial(prev => [...prev, { sender: 'luisito', text: resultadoFinal }]);
+        
+        // Calcular aciertos para enviar a la API
+        const aciertos = nuevasRespuestas.length - cantidadErrores;
+        fetch('/api/evaluacion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantId: 'merge-analitica', score: aciertos })
+        }).catch(err => console.error(err));
+
+      }, 800);
+    } 
+    else if (siguientePreguntaIdx < triviaBorges.length) {
+      // Condición B: Sigue vivo y hay más preguntas
       setTimeout(() => {
         setCurrentStep(siguientePreguntaIdx);
         setHistorial(prev => [...prev, { sender: 'luisito', text: triviaBorges[siguientePreguntaIdx].enunciado }]);
         setShowOptions(true);
       }, 800);
-    } else {
+    } 
+    else {
+      // Condición C: Terminó todas las preguntas sin ser eliminado (Ganó / Puntaje perfecto o 1 solo error permitido)
       setTimeout(() => {
-        // Calcular Calificación final
+        setIsFinished(true);
+        // Volvemos a contar aciertos totales por seguridad
         const aciertos = nuevasRespuestas.reduce((acc, resp, idx) => {
           return resp === triviaBorges[idx].correcta ? acc + 1 : acc;
         }, 0);
-        
-        setIsFinished(true);
+
         const resultadoFinal = aciertos === 3 
           ? "¡CALIFICADO! Dios ha detenido el tiempo para ti. Tienes un año secreto para terminar tu obra."
-          : "NO CALIFICADO. El universo ha seguido su curso. La descarga de fusiles concluyó.";
+          : "NO CALIFICADO. Tu conocimiento no fue suficiente. La bala alcanzó su destino.";
         
         setHistorial(prev => [...prev, { sender: 'luisito', text: resultadoFinal }]);
         
-        // Enviar a tu API asíncrona de Vercel/KV en segundo plano
         fetch('/api/evaluacion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -113,7 +138,7 @@ export default function LuisitoChat() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Panel de Opciones (Botones de Respuesta inferiores estilo Anespro) */}
+      {/* Panel de Opciones */}
       <div className="p-4 bg-[#091319] border-t border-slate-800 min-h-[140px] flex flex-col justify-center">
         {showOptions && !isFinished && (
           <div className="space-y-2 w-full">
